@@ -1,8 +1,8 @@
-prefix=/home/connor/rbe3002final/devel
+prefix=~/rbe3002finalproject/devel
 
-Name: beginner_tutorials
-Description: Description of beginner_tutorials
+Name: dat_package_tho
+Description: Deskription of dat_package
 Version: 0.0.0
 Cflags: 
-Libs: -L/home/connor/rbe3002final/devel/lib 
+Libs: -L~/rbe3002finalproject/devel/lib 
 Requires: 
