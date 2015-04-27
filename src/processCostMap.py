@@ -1,6 +1,11 @@
 
 
-#subs, pubs, and service functions
+#subs, pubs, and service functionsdef mapCallBack(msg):
+	#while (msg == OccupancyGrid()):
+		#rospy.sleep(0.01)
+	global worldMap
+	worldMap = msg
+	return msg
 
 #turn a map into an array
 def mapToArray(mapMsg):
@@ -80,6 +85,8 @@ if __name__ == '__main__':
 	threshold = 127
 	
 	#create subscribers and publishers and services
+	mapSub = rospy.Subscriber(rospy.get_param('/map_input_topic','/map'),OccupancyGrid, mapCallBack, queue_size=1)
+	odomSub = rospy.Subscriber('/odom', Odometry, odomCallBack, queue_size=1)
 
 	#pull data out of map subscription and place into 2d array
 	costMapArray = mapToArray(costMap)
