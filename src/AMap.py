@@ -22,24 +22,11 @@ class AMap:
 		self.nodesArray = mapArray
 		self.size = [len(mapArray),len(mapArray[0])]
 
-		y = 0
-
-		#print self.mapArray
-
-		for f in mapArray:
-			#print f
+		for y in range(len(mapArray[0])):
 			
-			x = 0
-			
-			for g in f:
-				#print g
-				#print mapArray[x][y]
-				
+			for x in range(len(mapArray)):
+
 				self.nodesArray[x][y] = ANode(mapArray[x][y], [x,y])
-				
-				x += 1
-
-			y += 1
 
 		self.generateEdges()
 
@@ -92,11 +79,16 @@ class AMap:
 	def navigate(self, start, goal, mapArray):
 
 		if (False):
-			print self.getNodeAt(start), self.getNodeAt(goal)
-			print start, goal
+			#print self.getNodeAt(start), self.getNodeAt(goal)
+			#print start, goal
 			"""for f in self.nodesArray:
 				for g in f:
-					print g"""
+					#print g"""
+
+		if type(self.getNodeAt(start)) is int or type(self.getNodeAt(goal)) is int:
+			return False
+
+		#print self.getNodeAt(start), self.getNodeAt(goal)
 
 		if (self.getNodeAt(start).value != 100 and self.getNodeAt(goal).value != 100):
 
@@ -117,8 +109,8 @@ class AMap:
 					self.thing.append(current.coord)
 
 				if (current.coord == goal):
-					for m in mapArray:
-						print m
+					#for m in mapArray:
+						#print m
 					self.thing = openCoords
 					return current.reconstruct(start)
 
@@ -128,9 +120,9 @@ class AMap:
 
 					if ([e.coord[0] - current.coord[0], e.coord[1] - current.coord[1]] != [0,0]) and math.fabs(e.coord[0] - current.coord[0]) <= 1 and math.fabs(e.coord[1] - current.coord[1]) <= 1:
 
-						print e.coord[0] - current.coord[0], e.coord[1] - current.coord[1]	
+						#print e.coord[0] - current.coord[0], e.coord[1] - current.coord[1]	
 						tentG = current.gScore + self.pythagoras(current.coord, e.coord)
-						print self.pythagoras(current.coord, goal)
+						#print self.pythagoras(current.coord, goal)
 
 						if (tentG < e.gScore):
 
@@ -148,13 +140,17 @@ class AMap:
 	"""return the node at a coordinate"""
 	def getNodeAt(self, coord):
 
-		node = self.mapArray[coord[0]][coord[1]]
+		#print coord
+
+		node = self.mapArray[int(round(coord[0]))][int(round(coord[1]))]
+
+		#print "node: ", node
 
 		return node
 
 	def pythagoras(self, pointA, pointB):
-		print pointA, pointB
-		print (pointA[0] - pointB[0])**2, (pointA[1] - pointB[1])**2
+		#print pointA, pointB
+		#print (pointA[0] - pointB[0])**2, (pointA[1] - pointB[1])**2
 		return math.sqrt(((pointA[0] - pointB[0])**2 + (pointA[1] - pointB[1])**2))
 
 	"""this is the heuristic, currently it's the euclidean distance,
@@ -201,11 +197,14 @@ class ANode:
 		nextNode = self.fromNode
 
 		while nextNode.coord != start:
-			print nextNode
+			#print nextNode
 			path.append(nextNode.coord)
 			nextNode = nextNode.fromNode
+			if nextNode is None:
+				break
 
-		path.append(nextNode.coord)
+		if nextNode is not None:
+			path.append(nextNode.coord)
 
 		return path
 
