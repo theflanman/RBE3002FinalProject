@@ -1,2 +1,2 @@
-
--DCATKIN_DEVEL_PREFIX=/home/connor/rbe3002final/devel -DCMAKE_INSTALL_PREFIX=/home/connor/rbe3002final/install -G Unix Makefiles
+esplorin
+-DCATKIN_DEVEL_PREFIX=/home/jack/rbe3002finalproject/devel -DCMAKE_INSTALL_PREFIX=/home/jack/rbe3002finalproject/install -G Unix Makefiles

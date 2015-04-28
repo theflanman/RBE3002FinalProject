@@ -1,0 +1,4 @@
+<launch>
+<node pkg="esplore" name="esploretest" type="test"/>
+
+</launch>
