@@ -3,7 +3,28 @@ from nav_msgs.msg import *
 from geometry_msgs.msg import *
 from visualization_msgs.msg import MarkerArray, Marker
 from AMap import AMap
+from move_base_msgs.msg import MoveBaseActionGoal
+from actionlib_msgs.msg import GoalID
 import math
+import tf
+import std_msgs.msg
+
+
+"""NOTE THIS IS IMPORTANT DO NOT FORGET
+	THER'S AN ERROR THAT SHOWS UP:
+	Traceback (most recent call last):
+  File "processCostMap.py", line 330, in <module>
+    closeFrontierCoords = frontiers[frontierCoMs.index(closeFrontier)]
+ValueError: [257, 206, 2] is not in list
+
+	AND IT'S PUBLISHING FAR TOO FREQUENTLY
+
+	THE PROGRAM NEEDS TO BE CHANGED SO THAT IF THAT ERROR SHOWS UP IT JUST TRIES AGAIN
+	AND RATHER THAN CONTINUOUSLY PUBLISHING MESSAGES,
+	THE PROGRAM NEEDS TO TRACK THE PROGRESS OF THE CURRENT GOAL,
+	AND HOLD UNTIL EITHER THE GOAL HAS BEEN REACHED OR UNTIL A NEW GOAL IS FOUND.
+
+	FURTHER, GOALS NEED TO BE IN EXPLORED SPACE, AND MUST BE REACHABLE, SO FIGURE THAT SHIT OUT"""
 
 global costMap
 global currentPosition
@@ -46,8 +67,6 @@ def publishMarkers(array, mapMapMap, pub):
 
 	markers = MarkerArray()
 
-	print markers
-
 	i = 0
 
 	for a in array:
@@ -67,8 +86,6 @@ def publishMarkers(array, mapMapMap, pub):
 		m.color.r = 1
 		m.color.a = 1
 
-		print markers
-
 		markers.markers.append(m)
 
 		i += 1
@@ -77,19 +94,37 @@ def publishMarkers(array, mapMapMap, pub):
 
 	return
 
-def publishGoal(coordCoM, coordArr, mapMapMap, pub):
+def publishGoal(coordCoM, currentPosition, mapMapMap, pub):
 
 	goal = PoseStamped()
+	goalID = GoalID()
+	command = MoveBaseActionGoal()
 	res = mapMapMap.info.resolution
 	origin = [mapMapMap.info.origin.position.y, mapMapMap.info.origin.position.x]
 	goalPos = [coordCoM[0]*res + origin[0], coordCoM[1]*res + origin[1]]
 
+	theta = math.atan2(coordCoM[0]-currentPosition[0],coordCoM[1]-currentPosition[1])
+
 	goal.header.frame_id = 'map'
+
+	o = tf.transformations.quaternion_from_euler(0,0,theta/math.pi)
 
 	goal.pose.position.y = goalPos[0]
 	goal.pose.position.x = goalPos[1]
+	goal.pose.orientation = Quaternion(o[0], o[1], o[2], o[3])
 
-	pub.publish(goal)
+	goal.header.stamp = rospy.Time.now()
+	goalID.id = "map"
+	goalID.stamp = rospy.Time.now()
+	
+	command.goal.target_pose = goal
+	command.goal_id = goalID
+	command.header.stamp = rospy.Time.now()
+	command.header.frame_id = 'map'
+
+	pub.publish(command)
+
+	rospy.sleep(5)
 
 	return
 
@@ -265,7 +300,7 @@ if __name__ == '__main__':
 	odomSub = rospy.Subscriber('/odom', Odometry, odomCallBack, queue_size=1)
 	frontierPub = rospy.Publisher('/frontier', GridCells, queue_size=1)
 	markerPub = rospy.Publisher('/frontier_CoMs', MarkerArray, queue_size=1)
-	goalPub = rospy.Publisher('/move_base_simple/goal', PoseStamped, queue_size=1)
+	goalPub = rospy.Publisher('/move_base/goal', MoveBaseActionGoal, queue_size=1)
 
 	while costMap is 0 or currentPosition is 0:
 		if costMap is 0 and currentPosition is 0:
@@ -316,4 +351,4 @@ if __name__ == '__main__':
 		publishMarkers(frontierCoMs, costMap, markerPub)
 
 		#publish a message to stop the current navigation and another to navigate to the center of mass of the nearest frontier
-		publishGoal(closeFrontier, closeFrontierCoords, costMap, goalPub)
+		publishGoal(closeFrontier, currentPosition, costMap, goalPub)
