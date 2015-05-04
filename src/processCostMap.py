@@ -4,7 +4,7 @@ from geometry_msgs.msg import *
 from visualization_msgs.msg import MarkerArray, Marker
 from AMap import AMap
 from move_base_msgs.msg import MoveBaseActionGoal
-from actionlib_msgs.msg import GoalID
+from actionlib_msgs.msg import GoalID, GoalStatusArray, GoalStatus
 import math
 import tf
 import std_msgs.msg
@@ -335,9 +335,9 @@ if __name__ == '__main__':
 	frontierPub = rospy.Publisher('frontier', GridCells, queue_size=1)
 	markerPub = rospy.Publisher('frontier_CoMs', MarkerArray, queue_size=1)
 	goalPub = rospy.Publisher('move_base/goal', MoveBaseActionGoal, queue_size=1)
-	statusSub = rospy.subscriber("move_base/status",GoalStatusArray, statusCallBack ,queue_size = 1)
+	statusSub = rospy.Subscriber("move_base/status",GoalStatusArray, statusCallBack ,queue_size = 1)
 	print "waiting for move_base status..."
-	rospy.wait_message("move_base/status")
+	rospy.wait_for_message("move_base/status", GoalStatusArray)
 	rospy.sleep(1)
 	print "done waiting"
 
