@@ -31,7 +31,7 @@ global currentPosition
 
 costMap = 0
 currentPosition = 0
-
+status = 0
 #subs, pubs, and service functions
 def mapCallBack(msg):
 	global costMap
@@ -94,10 +94,31 @@ def publishMarkers(array, mapMapMap, pub):
 
 	return
 
-def publishGoal(coordCoM, currentPosition, mapMapMap, pub):
+def statusCallBack(msg):
+	global statusMessage
+	statusMessage = msg
+	return msg
 
+def getStatus(messageNumber):
+	global statusMessage
+	for stat in statusMessage.status_list:
+		if(stat.goal_id.id is str(messageNumber)):
+			return stat.status
+	return -1
+"""JLL"""
+def getHighestStatus():
+    global statusMessage
+    low = 0
+    for element in statusMessage:
+        if low < element.status:
+            low = element.status
+    return low
+
+"""publishes a goal and tracks the staus of the goal and only returns when the goal has been reached or has been aborted"""
+def publishGoal(coordCoM, currentPosition, mapMapMap, pub):
 	goal = PoseStamped()
 	goalID = GoalID()
+	goalID.id = str(publishGoal.id)
 	command = MoveBaseActionGoal()
 	res = mapMapMap.info.resolution
 	origin = [mapMapMap.info.origin.position.y, mapMapMap.info.origin.position.x]
@@ -123,9 +144,22 @@ def publishGoal(coordCoM, currentPosition, mapMapMap, pub):
 	command.header.frame_id = 'map'
 
 	pub.publish(command)
-
-	rospy.sleep(5)
-
+	
+	# subscriber things:
+	
+	aborted = 0
+	reached = 0
+	timeout = 20 # sivd fy numa ryno al'z tane
+	while(not (aborted or reached) and not rospy.isshutdown() and timeout):
+		rospy.sleep(4) 
+		# subscribe to topic 
+		statusValue = getStatus(publishGoal.id)
+		if(statusValue == GoalStatus.ABORTED):
+			aborted = 1
+		elif(statusValue == GoalStatus.SUCCEEDED):
+			reached = 1
+		timeout -= 1
+	publishGoal.id += 1	
 	return
 
 #turn a map into an array
@@ -296,11 +330,19 @@ if __name__ == '__main__':
 	bestDist = -1
 	
 	#create subscribers and publishers and services
-	mapSub = rospy.Subscriber(rospy.get_param('/map_input_topic','/map'),OccupancyGrid, mapCallBack, queue_size=1)
-	odomSub = rospy.Subscriber('/odom', Odometry, odomCallBack, queue_size=1)
-	frontierPub = rospy.Publisher('/frontier', GridCells, queue_size=1)
-	markerPub = rospy.Publisher('/frontier_CoMs', MarkerArray, queue_size=1)
-	goalPub = rospy.Publisher('/move_base/goal', MoveBaseActionGoal, queue_size=1)
+	mapSub = rospy.Subscriber(rospy.get_param('map_input_topic','/map'),OccupancyGrid, mapCallBack, queue_size=1)
+	odomSub = rospy.Subscriber('odom', Odometry, odomCallBack, queue_size=1)
+	frontierPub = rospy.Publisher('frontier', GridCells, queue_size=1)
+	markerPub = rospy.Publisher('frontier_CoMs', MarkerArray, queue_size=1)
+	goalPub = rospy.Publisher('move_base/goal', MoveBaseActionGoal, queue_size=1)
+	statusSub = rospy.subscriber("move_base/status",GoalStatusArray, statusCallBack ,queue_size = 1)
+	print "waiting for move_base status..."
+	rospy.wait_message("move_base/status")
+	rospy.sleep(1)
+	print "done waiting"
+
+
+	publishGoal.id = getHighestStatus()
 
 	while costMap is 0 or currentPosition is 0:
 		if costMap is 0 and currentPosition is 0:
